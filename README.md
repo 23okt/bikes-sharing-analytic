@@ -50,7 +50,7 @@ streamlit run dashboard/dashboard.py
 proyek_analisis_data/
 │-- dashboard/
 │   │-- dashboard.py  # Main dashboard script
-│   │-- data_visualization.py  # Visualization utilities
+│   │-- all_data.csv # Dataset gabuungan dari day.csv dan hour.csv
 │-- data/
 │   │-- day.csv  # Dataset Peminjaman pada setiap harinya
 |   |-- hour.csv # Dataset peminjaman berdasarkan jam setiap harinya
