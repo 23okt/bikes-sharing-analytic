@@ -14,16 +14,36 @@ bikes_per_hour_df = pd.read_csv("data/hour.csv")
 datetime_columns = ["dteday"]
 
 for column in datetime_columns:
-  bikes_per_day_df[column] = pd.to_datetime(bikes_per_day_df[column])
-  
-for column in datetime_columns:
-  bikes_per_hour_df[column] = pd.to_datetime(bikes_per_hour_df[column])
+    bikes_per_day_df[column] = pd.to_datetime(bikes_per_day_df[column])
+    bikes_per_hour_df[column] = pd.to_datetime(bikes_per_hour_df[column])
 
 
-def create_monthly_order_df():
-    bikes_per_day_df['year_month'] = bikes_per_day_df['dteday'].dt.to_period('M')
-    monthly_trend = bikes_per_day_df.groupby('year_month')['cnt'].sum()
-    
+all_df["dteday_x"] = pd.to_datetime(all_df["dteday_x"])
+all_df["dteday_y"] = pd.to_datetime(all_df["dteday_y"])
+
+min_date = bikes_per_day_df['dteday'].min().date()
+max_date = bikes_per_day_df['dteday'].max().date()
+
+with st.sidebar:
+    st.header("Bike Sharing Dataset")
+    st.image("https://img.freepik.com/premium-vector/young-man-rides-bicycle-flat-style-vector-illustration_787461-1042.jpg",width=100)
+    start_date, end_date = st.date_input(
+        label='Rentang Waktu',
+        min_value=min_date,
+        max_value=max_date,
+        value=[min_date, max_date]
+    )
+    st.subheader("Overview")
+    st.write("Dashboard ini dikembangkan untuk menganalisis tren peminjaman sepeda berdasarkan berbagai faktor seperti cuaca, musim, dan kecepatan angin. Visualisasi data membantu dalam memahami pola penggunaan sepeda sepanjang waktu.")
+
+filtered_day_df = bikes_per_day_df[
+    (bikes_per_day_df["dteday"].dt.date >= start_date) &
+    (bikes_per_day_df["dteday"].dt.date <= end_date)
+]
+
+def create_monthly_order_df(df):
+    df['year_month'] = df['dteday'].dt.to_period('M')
+    monthly_trend = df.groupby('year_month')['cnt'].sum()
     return monthly_trend
     
 def total_bikes_per_day():
@@ -45,13 +65,7 @@ wind_avg = all_df.groupby('windspeed_y', as_index=False)['cnt_y'].sum()
 cnt_min = wind_avg.sort_values(by="cnt_y", ascending=True)
 cnt_max = wind_avg.sort_values(by="cnt_y", ascending=False)
 
-with st.sidebar:
-    st.header("Bike Sharing Dataset")
-    st.image("https://img.freepik.com/premium-vector/young-man-rides-bicycle-flat-style-vector-illustration_787461-1042.jpg",width=100)
-    st.subheader("Overview")
-    st.write("Dashboard ini dikembangkan untuk menganalisis tren peminjaman sepeda berdasarkan berbagai faktor seperti cuaca, musim, dan kecepatan angin. Visualisasi data membantu dalam memahami pola penggunaan sepeda sepanjang waktu.")
-    
-monthly_order_df = create_monthly_order_df()
+monthly_order_df = create_monthly_order_df(filtered_day_df)
 total_bikes_day_df = total_bikes_per_day()
 bikes_per_season = create_bikes_per_season()
 
@@ -72,17 +86,20 @@ with col3:
     total_rentals = all_df.cnt_y.sum()
     st.metric("Total Rental", value=total_rentals)
 
-st.subheader("Tren Peminjaman Sepedar Per Bulan")
-monthly_order_df.index = monthly_order_df.index.to_timestamp()
+st.subheader("Tren Peminjaman Sepeda Per Bulan")
+if not monthly_order_df.empty:
+    monthly_order_df.index = monthly_order_df.index.to_timestamp()
 
-plt.figure(figsize=(12, 8))
-sns.lineplot(x=monthly_order_df.index, y=monthly_order_df.values, marker="o", linewidth=2, color="royalblue")
-plt.title("Tren Jumlah Peminjaman Sepeda per Bulan", fontsize=14)
-plt.xlabel("Bulan", fontsize=12)
-plt.ylabel("Jumlah Peminjaman Sepeda", fontsize=12)
-plt.xticks(rotation=45)
-plt.grid(True, alpha=0.6)
-st.pyplot(plt)
+    fig, ax = plt.subplots(figsize=(12, 8))
+    sns.lineplot(x=monthly_order_df.index, y=monthly_order_df.values, marker="o", linewidth=2, color="royalblue", ax=ax)
+    ax.set_title("Tren Jumlah Peminjaman Sepeda per Bulan", fontsize=14)
+    ax.set_xlabel("Bulan", fontsize=12)
+    ax.set_ylabel("Jumlah Peminjaman Sepeda", fontsize=12)
+    plt.xticks(rotation=45)
+    plt.grid(True, alpha=0.6)
+    st.pyplot(fig)
+else:
+    st.warning("Tidak ada data untuk rentang waktu yang dipilih.")
 
 st.markdown("💡 Berdasarkan data visualisasi diatas dapat dilihat bahwa tren peminjaman selalu meningkat pada pertengahan bulan menuju pada akhir bulan.")
 
